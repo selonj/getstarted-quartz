@@ -1,0 +1,28 @@
+group 'com.selonj'
+version '1.0'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+
+repositories {
+  mavenCentral()
+  mavenLocal()
+}
+
+dependencies {
+  compile 'log4j:log4j:1.2.17'
+
+  compile 'org.quartz-scheduler:quartz:2.2.2'
+  testCompile 'junit:junit:4.+'
+  compile 'org.slf4j:slf4j-log4j12:1.7.5'
+}
+
+
+apply plugin: 'idea'
+
+idea {
+  module {
+    excludeDirs += [file('.idea'), file('.gradle'), file('gradle')]
+  }
+}
