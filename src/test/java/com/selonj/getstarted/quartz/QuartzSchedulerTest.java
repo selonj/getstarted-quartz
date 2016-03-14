@@ -2,9 +2,12 @@ package com.selonj.getstarted.quartz;
 
 import com.selonj.getstarted.quartz.supports.QuartzJobMonitor;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobPersistenceException;
 import org.quartz.Scheduler;
@@ -13,6 +16,7 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.quartz.DateBuilder.IntervalUnit.MILLISECOND;
 import static org.quartz.DateBuilder.futureDate;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
@@ -54,7 +58,7 @@ public class QuartzSchedulerTest {
   public void executeJobRightNow() throws Exception {
     quartz.scheduleJob(monitor.aJob().build(), newTrigger().build());
 
-    monitor.assertJobExecuted(100, MILLISECONDS);
+    monitor.assertJobExecutedMatchingUtil(100, MILLISECONDS);
   }
 
   @Test
@@ -66,7 +70,7 @@ public class QuartzSchedulerTest {
     quartz.scheduleJob(monitor.aJob().build(), newTrigger().startAt(start).build());
 
     monitor.assertJobNotExecutedAfter(duration - 200, MILLISECONDS);
-    monitor.assertJobExecuted(201, MILLISECONDS);
+    monitor.assertJobExecutedMatchingUtil(201, MILLISECONDS);
   }
 
   @Test
@@ -81,10 +85,10 @@ public class QuartzSchedulerTest {
 
     quartz.scheduleJob(monitor.aJob().build(), newTrigger().withSchedule(scheduler).build());
 
-    monitor.assertJobExecuted(timeout, MILLISECONDS);
+    monitor.assertJobExecutedMatchingUtil(timeout, MILLISECONDS);
     //repeat 2 times
-    monitor.assertJobExecuted(timeout, MILLISECONDS);
-    monitor.assertJobExecuted(timeout, MILLISECONDS);
+    monitor.assertJobExecutedMatchingUtil(timeout, MILLISECONDS);
+    monitor.assertJobExecutedMatchingUtil(timeout, MILLISECONDS);
     monitor.assertJobNotExecutedAfter(timeout, MILLISECONDS);
   }
 
@@ -95,7 +99,7 @@ public class QuartzSchedulerTest {
 
     quartz.scheduleJob(newTrigger().forJob(job).build());
 
-    monitor.assertJobExecuted(1, SECONDS);
+    monitor.assertJobExecutedMatchingUtil(1, SECONDS);
   }
 
   @Test
@@ -104,11 +108,22 @@ public class QuartzSchedulerTest {
     quartz.addJob(job, true, true);
 
     quartz.scheduleJob(newTrigger().forJob("foo").build());
-    monitor.assertJobExecuted(100, MILLISECONDS);
+    monitor.assertJobExecutedMatchingUtil(100, MILLISECONDS);
   }
 
   @Test(expected = JobPersistenceException.class)
   public void triggerJobNameThrowsExceptionIfJobNotExists() throws Exception {
     quartz.scheduleJob(newTrigger().forJob("foo").build());
+  }
+
+  @Test
+  public void executeJobWithinDataProvidedByTrigger() throws Exception {
+    JobDataMap data = new JobDataMap() {{
+      put("foo", "bar");
+    }};
+    quartz.scheduleJob(monitor.aJob().build(), newTrigger().usingJobData(data).build());
+
+    monitor.assertJobExecutedMatchingUtil(1, TimeUnit.SECONDS,
+        Matchers.<String, Object>hasEntry("foo", "bar"));
   }
 }
