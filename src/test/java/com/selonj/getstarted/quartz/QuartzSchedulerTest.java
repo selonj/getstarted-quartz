@@ -121,7 +121,21 @@ public class QuartzSchedulerTest {
     JobDataMap data = new JobDataMap() {{
       put("foo", "bar");
     }};
+
     quartz.scheduleJob(monitor.aJob().build(), newTrigger().usingJobData(data).build());
+
+    monitor.assertJobExecutedMatchingUtil(1, TimeUnit.SECONDS,
+        Matchers.<String, Object>hasEntry("foo", "bar"));
+  }
+
+  @Test
+  public void executeJobWithinDataProvidedByJobDetail() throws Exception {
+    JobDataMap data = new JobDataMap() {{
+      put("foo", "bar");
+    }};
+
+    quartz.scheduleJob(monitor.aJob().setJobData(data).build(),
+        newTrigger().build());
 
     monitor.assertJobExecutedMatchingUtil(1, TimeUnit.SECONDS,
         Matchers.<String, Object>hasEntry("foo", "bar"));
