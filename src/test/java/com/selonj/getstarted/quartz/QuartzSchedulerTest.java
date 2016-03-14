@@ -3,6 +3,7 @@ package com.selonj.getstarted.quartz;
 import com.selonj.getstarted.quartz.supports.QuartzJobMonitor;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
@@ -16,6 +17,7 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.quartz.DateBuilder.IntervalUnit.MILLISECOND;
 import static org.quartz.DateBuilder.futureDate;
@@ -139,5 +141,18 @@ public class QuartzSchedulerTest {
 
     monitor.assertJobExecutedMatchingUtil(1, TimeUnit.SECONDS,
         Matchers.<String, Object>hasEntry("foo", "bar"));
+  }
+
+  @Test
+  public void allJobDataMergedWhenJobExecuted() throws Exception {
+    quartz.scheduleJob(
+        monitor.aJob().usingJobData("foo", "bar").build(),
+        newTrigger().usingJobData("key", "value").build()
+    );
+
+    monitor.assertJobExecutedMatchingUtil(1, TimeUnit.SECONDS, allOf(
+        Matchers.<String, Object>hasEntry("foo", "bar"),
+        Matchers.<String, Object>hasEntry("key", "value")
+    ));
   }
 }
